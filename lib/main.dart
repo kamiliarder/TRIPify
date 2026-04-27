@@ -410,9 +410,9 @@ class _HomeScreenState extends State<HomeScreen> {
             stream: _bookingRepository.watchAvailableTickets(),
             builder: (context, snapshot) {
               if (snapshot.hasError) {
-                return const Padding(
-                  padding: EdgeInsets.only(bottom: 16),
-                  child: Text('Gagal memuat tiket.'),
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Text('Gagal memuat tiket: ${snapshot.error}'),
                 );
               }
               if (snapshot.connectionState == ConnectionState.waiting) {
