@@ -32,15 +32,16 @@ class FirestoreBookingRepository implements BookingRepository {
 
   @override
   Stream<List<TicketModel>> watchAvailableTickets() {
-    return _tickets
-        .where('status', isEqualTo: 'available')
-        .orderBy('date')
-        .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map(TicketModel.fromFirestore)
-              .toList(growable: false),
-        );
+    return _tickets.where('status', isEqualTo: 'available').snapshots().map((
+      snapshot,
+    ) {
+      final tickets = snapshot.docs
+          .map(TicketModel.fromFirestore)
+          .toList(growable: false);
+      final sortedTickets = [...tickets]
+        ..sort((left, right) => left.date.compareTo(right.date));
+      return sortedTickets;
+    });
   }
 
   @override
