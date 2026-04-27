@@ -445,3 +445,77 @@ It also makes it straightforward and low risk to add new logic and new UI.
 Fakes aren't concerned with the inner workings of any given method as much
 as they're concerned with inputs and outputs. If you have this in mind while writing application code,
 you're forced to write modular, lightweight functions and classes with well defined inputs and outputs.
+
+# Project Instructions
+# **TRIPIFY — AI Instructions: Database Schema & System Workflow**
+
+## **1\. Project Overview**
+
+Tripify is a train ticket booking mobile application built as a simulation project (no real payment gateway). It targets urban users aged 17–40 (students and office workers). The app is designed to be simple and straightforward.
+Core features: train schedule search, seat selection, online booking, digital e-tickets, travel history, and simulated online payment.
+
+## ---
+
+**2\. Database Schema**
+
+The database consists of 3 core tables: users, tickets, and bookings.
+
+### **Table: users**
+
+| Field | Data Type | Constraints | Example |
+| :---- | :---- | :---- | :---- |
+| userId | INT | PRIMARY KEY, AUTO\_INCREMENT | 1 |
+| name | VARCHAR(100) | NOT NULL | Alice |
+| email | VARCHAR(150) | NOT NULL, UNIQUE | alice@email.com |
+| password | VARCHAR(255) | NOT NULL | $2b$10$hashedpwd |
+| role | ENUM | NOT NULL, DEFAULT 'user' ('user', 'admin') | user |
+
+### **Table: tickets (Schedules)**
+
+| Field | Data Type | Constraints | Example |
+| :---- | :---- | :---- | :---- |
+| ticketId | INT | PRIMARY KEY, AUTO\_INCREMENT | 1 |
+| originStation | VARCHAR(100) | NOT NULL | Gambir |
+| destinationStation | VARCHAR(100) | NOT NULL | Bandung |
+| date | DATE | NOT NULL | 2025-06-01 |
+| train | VARCHAR(100) | NOT NULL | Argo Parahyangan |
+| status | ENUM | NOT NULL, DEFAULT 'available' | available |
+
+### **Table: bookings**
+
+| Field | Data Type | Constraints | Example |
+| :---- | :---- | :---- | :---- |
+| bookingId | INT | PRIMARY KEY, AUTO\_INCREMENT | 1 |
+| userId | INT | NOT NULL, FOREIGN KEY | 1 |
+| ticketId | INT | NOT NULL, FOREIGN KEY | 1 |
+| seatNumber | VARCHAR(10) | NOT NULL, UNIQUE with ticketId | A1 |
+| status | ENUM | pending, confirmed, completed, cancelled | pending |
+
+## ---
+
+**3\. System Workflow & Business Logic**
+
+### **3.1. Multi-Seat Booking Logic (Revised)**
+
+* **Batch Insertion:** Although the schema enforces one seat per row, the application supports multi-seat selection. If a user selects multiple seats (e.g., A1, A2, A3), the backend performs a loop to insert multiple rows into the bookings table.
+* **Logical Grouping:** These entries are linked via the same userId and ticketId within the same transaction.
+* **Database Transaction:** All inserts must be wrapped in a transaction (Atomic). If one seat fails (e.g., already taken), the entire booking process for that session is rolled back.
+
+### **3.2. Verification & Admin Scanning (Revised)**
+
+* **Batch Update:** To ensure efficiency, admins do not need to scan each seat individually for the same user.
+* **Single Action:** When an admin verifies one booking reference or seat for a specific user, the system automatically updates all pending bookings for that userId on the same ticketId to completed.
+* **SQL Implementation:** UPDATE bookings SET status \= 'completed' WHERE userId \= ? AND ticketId \= ? AND status \= 'pending';
+
+### **3.3. Travel History**
+
+* The app queries bookings JOIN tickets for the logged-in userId to display past and upcoming trips.
+
+## ---
+
+**4\. Key Design Decisions & Constraints**
+
+* **Simulation Only:** No real payment gateway or official ticket issuance.
+* **Seat Uniqueness:** Enforced at the database level via composite unique constraint (ticketId, seatNumber).
+* **Data Integrity:** Station and train data live in the tickets table; bookings fetch this info via JOIN to prevent duplication.
+* **Scalable Logic:** Multi-passenger support is handled at the application layer through batch processing, keeping the database schema simple and normalized.
