@@ -1,8 +1,16 @@
 import 'dart:ui';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
-void main() {
+import 'data/models/ticket_model.dart';
+import 'data/repositories/firestore_booking_repository.dart';
+import 'firebase_options.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MainApp());
 }
 
@@ -28,6 +36,9 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedNavIndex = 0;
+  final BookingRepository _bookingRepository = FirestoreBookingRepository(
+    firestore: FirebaseFirestore.instance,
+  );
 
   static const List<String> recentSearches = [
     'Bandung → Jakarta\n25 Oktober 2024',
@@ -35,58 +46,11 @@ class _HomeScreenState extends State<HomeScreen> {
     'Bandung → Jakarta\n23 Oktober 2024',
   ];
 
-  static const List<_BestDealTicket> bestDealTickets = [
-    _BestDealTicket(
-      trainName: 'Pangandaran 149C',
-      seatClass: 'Ekonomi',
-      departTime: '9:30',
-      arriveTime: '12.20',
-      duration: '2j 50m',
-      origin: 'Gambir (GMR)',
-      destination: 'Jakarta (CGK)',
-      price: 'IDR 150.000',
-      seatsLeft: '6 kursi tersisa',
-    ),
-    _BestDealTicket(
-      trainName: 'Pangandaran 131B',
-      seatClass: 'Ekonomi',
-      departTime: '10:00',
-      arriveTime: '12.50',
-      duration: '2j 50m',
-      origin: 'Gambir (GMR)',
-      destination: 'Jakarta (CGK)',
-      price: 'IDR 175.000',
-      seatsLeft: '6 kursi tersisa',
-    ),
-    _BestDealTicket(
-      trainName: 'Papadayan 129C',
-      seatClass: 'Eksekutif',
-      departTime: '10:55',
-      arriveTime: '13.45',
-      duration: '2j 50m',
-      origin: 'Gambir (GMR)',
-      destination: 'Jakarta (CGK)',
-      oldPrice: 'IDR 300.000',
-      price: 'IDR 250.000',
-      seatsLeft: '4 kursi tersisa',
-    ),
-    _BestDealTicket(
-      trainName: 'Parahyangan 139AC',
-      seatClass: 'Eksekutif',
-      departTime: '14:10',
-      arriveTime: '17.00',
-      duration: '2j 50m',
-      origin: 'Gambir (GMR)',
-      destination: 'Jakarta (CGK)',
-      price: 'IDR 350.000',
-      seatsLeft: '6 kursi tersisa',
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
-    const bookingFormOverlap = 0.0; // You can change the value, but for now its unused
+    const bookingFormOverlap =
+        0.0; // You can change the value, but for now its unused
     return Scaffold(
       body: Stack(
         fit: StackFit.expand,
@@ -372,10 +336,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 SizedBox(height: 4),
                 Text(
                   'Kamis, 3 Okt',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -398,10 +359,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 4),
                 const Text(
                   '1 Penumpang',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -448,14 +406,44 @@ class _HomeScreenState extends State<HomeScreen> {
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 14),
-          ...bestDealTickets.map(_buildBestDealCard),
+          StreamBuilder<List<TicketModel>>(
+            stream: _bookingRepository.watchAvailableTickets(),
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return const Padding(
+                  padding: EdgeInsets.only(bottom: 16),
+                  child: Text('Gagal memuat tiket.'),
+                );
+              }
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24),
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              }
+
+              final tickets = snapshot.data ?? const <TicketModel>[];
+              if (tickets.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.only(bottom: 16),
+                  child: Text('Belum ada tiket tersedia.'),
+                );
+              }
+
+              return Column(
+                children: tickets
+                    .map(_buildBestDealCard)
+                    .toList(growable: false),
+              );
+            },
+          ),
           const SizedBox(height: 12),
         ],
       ),
     );
   }
 
-  Widget _buildBestDealCard(_BestDealTicket ticket) {
+  Widget _buildBestDealCard(TicketModel ticket) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
@@ -510,7 +498,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      ticket.trainName,
+                      ticket.train,
                       style: const TextStyle(
                         fontSize: 24 * 0.72,
                         fontWeight: FontWeight.w600,
@@ -518,7 +506,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     Text(
-                      ticket.seatClass,
+                      ticket.seatClass ?? 'Ekonomi',
                       style: const TextStyle(
                         fontSize: 14,
                         color: Color(0xFF5F5F5F),
@@ -532,7 +520,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   if (ticket.oldPrice != null)
                     Text(
-                      ticket.oldPrice!,
+                      _formatIdr(ticket.oldPrice),
                       style: const TextStyle(
                         color: Color(0xFF9E9E9E),
                         fontSize: 12,
@@ -540,7 +528,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   Text(
-                    ticket.price,
+                    _formatIdr(ticket.price),
                     style: const TextStyle(
                       color: Color(0xFFF81818),
                       fontSize: 32 * 0.72,
@@ -548,7 +536,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   Text(
-                    ticket.seatsLeft,
+                    ticket.seatsLeft != null
+                        ? '${ticket.seatsLeft} kursi tersisa'
+                        : 'Kursi tersisa belum tersedia',
                     style: const TextStyle(
                       color: Color(0xFFF81818),
                       fontSize: 18 * 0.72,
@@ -563,7 +553,10 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildStationColumn(ticket.departTime, ticket.origin),
+              _buildStationColumn(
+                ticket.departTime ?? '-',
+                ticket.originStation,
+              ),
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.only(top: 4),
@@ -578,7 +571,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 6),
                         child: Text(
-                          ticket.duration,
+                          ticket.duration ?? '-',
                           style: const TextStyle(
                             fontSize: 10,
                             color: Color(0xFFA9A9A9),
@@ -595,12 +588,26 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ),
-              _buildStationColumn(ticket.arriveTime, ticket.destination),
+              _buildStationColumn(
+                ticket.arriveTime ?? '-',
+                ticket.destinationStation,
+              ),
             ],
           ),
         ],
       ),
     );
+  }
+
+  String _formatIdr(int? value) {
+    if (value == null) {
+      return 'IDR -';
+    }
+    final formatted = value.toString().replaceAllMapped(
+      RegExp(r'\B(?=(\d{3})+(?!\d))'),
+      (match) => '.',
+    );
+    return 'IDR $formatted';
   }
 
   Widget _buildStationColumn(String time, String station) {
@@ -657,30 +664,4 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-}
-
-class _BestDealTicket {
-  const _BestDealTicket({
-    required this.trainName,
-    required this.seatClass,
-    required this.departTime,
-    required this.arriveTime,
-    required this.duration,
-    required this.origin,
-    required this.destination,
-    this.oldPrice,
-    required this.price,
-    required this.seatsLeft,
-  });
-
-  final String trainName;
-  final String seatClass;
-  final String departTime;
-  final String arriveTime;
-  final String duration;
-  final String origin;
-  final String destination;
-  final String? oldPrice;
-  final String price;
-  final String seatsLeft;
 }

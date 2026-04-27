@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "707464102007",
+    "project_id": "tripify-xie",
+    "storage_bucket": "tripify-xie.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:707464102007:android:f44c0a8296712e8d298672",
+        "android_client_info": {
+          "package_name": "com.example.tripify"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCOXvlJFphlSlhiCxTx7vltXCeo1Xg0u-4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
