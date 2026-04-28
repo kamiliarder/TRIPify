@@ -5,12 +5,58 @@ import '../models/ticket_model.dart';
 
 abstract class BookingRepository {
   Stream<List<TicketModel>> watchAvailableTickets();
+  Stream<List<TicketModel>> watchAllTickets();
+
+  Stream<List<BookingModel>> watchBookings({
+    required String userId,
+    required String ticketId,
+  });
 
   Future<void> bookSeats({
     required String userId,
     required String ticketId,
     required List<String> seatNumbers,
   });
+
+  Future<void> updateBookingStatus({
+    required String bookingId,
+    required String status,
+  });
+
+  Future<void> deleteBooking({required String bookingId});
+
+  Future<String> createTicket({
+    required String originStation,
+    required String destinationStation,
+    required DateTime date,
+    required String train,
+    required String status,
+    String? seatClass,
+    String? departTime,
+    String? arriveTime,
+    String? duration,
+    int? oldPrice,
+    int? price,
+    int? seatsLeft,
+  });
+
+  Future<void> updateTicket({
+    required String ticketId,
+    required String originStation,
+    required String destinationStation,
+    required DateTime date,
+    required String train,
+    required String status,
+    String? seatClass,
+    String? departTime,
+    String? arriveTime,
+    String? duration,
+    int? oldPrice,
+    int? price,
+    int? seatsLeft,
+  });
+
+  Future<void> deleteTicket({required String ticketId});
 
   Future<void> verifyAllPending({
     required String userId,
@@ -35,6 +81,43 @@ class FirestoreBookingRepository implements BookingRepository {
     return _tickets.where('status', isEqualTo: 'available').snapshots().map((
       snapshot,
     ) {
+      final tickets = snapshot.docs
+          .map(TicketModel.fromFirestore)
+          .toList(growable: false);
+      final sortedTickets = [...tickets]
+        ..sort((left, right) => left.date.compareTo(right.date));
+      return sortedTickets;
+    });
+  }
+
+  @override
+  Stream<List<BookingModel>> watchBookings({
+    required String userId,
+    required String ticketId,
+  }) {
+    return _bookings
+        .where('userId', isEqualTo: userId)
+        .where('ticketId', isEqualTo: ticketId)
+        .snapshots()
+        .map((snapshot) {
+          final bookings = snapshot.docs
+              .map(BookingModel.fromFirestore)
+              .toList(growable: false);
+          final sortedBookings = [...bookings]
+            ..sort((left, right) {
+              final leftDate =
+                  left.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+              final rightDate =
+                  right.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+              return rightDate.compareTo(leftDate);
+            });
+          return sortedBookings;
+        });
+  }
+
+  @override
+  Stream<List<TicketModel>> watchAllTickets() {
+    return _tickets.snapshots().map((snapshot) {
       final tickets = snapshot.docs
           .map(TicketModel.fromFirestore)
           .toList(growable: false);
@@ -81,6 +164,93 @@ class FirestoreBookingRepository implements BookingRepository {
         transaction.set(_bookings.doc(id), booking.toMap());
       }
     });
+  }
+
+  @override
+  Future<void> updateBookingStatus({
+    required String bookingId,
+    required String status,
+  }) async {
+    await _bookings.doc(bookingId).update({'status': status});
+  }
+
+  @override
+  Future<void> deleteBooking({required String bookingId}) async {
+    await _bookings.doc(bookingId).delete();
+  }
+
+  @override
+  Future<String> createTicket({
+    required String originStation,
+    required String destinationStation,
+    required DateTime date,
+    required String train,
+    required String status,
+    String? seatClass,
+    String? departTime,
+    String? arriveTime,
+    String? duration,
+    int? oldPrice,
+    int? price,
+    int? seatsLeft,
+  }) async {
+    final reference = _tickets.doc();
+    final ticket = TicketModel(
+      id: reference.id,
+      originStation: originStation,
+      destinationStation: destinationStation,
+      date: date,
+      train: train,
+      status: status,
+      seatClass: seatClass,
+      departTime: departTime,
+      arriveTime: arriveTime,
+      duration: duration,
+      oldPrice: oldPrice,
+      price: price,
+      seatsLeft: seatsLeft,
+    );
+    await reference.set(ticket.toMap());
+    return reference.id;
+  }
+
+  @override
+  Future<void> updateTicket({
+    required String ticketId,
+    required String originStation,
+    required String destinationStation,
+    required DateTime date,
+    required String train,
+    required String status,
+    String? seatClass,
+    String? departTime,
+    String? arriveTime,
+    String? duration,
+    int? oldPrice,
+    int? price,
+    int? seatsLeft,
+  }) async {
+    final ticket = TicketModel(
+      id: ticketId,
+      originStation: originStation,
+      destinationStation: destinationStation,
+      date: date,
+      train: train,
+      status: status,
+      seatClass: seatClass,
+      departTime: departTime,
+      arriveTime: arriveTime,
+      duration: duration,
+      oldPrice: oldPrice,
+      price: price,
+      seatsLeft: seatsLeft,
+    );
+    await _tickets.doc(ticketId).update(ticket.toMap());
+  }
+
+  @override
+  Future<void> deleteTicket({required String ticketId}) async {
+    await _tickets.doc(ticketId).delete();
   }
 
   @override
