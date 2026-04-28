@@ -4,10 +4,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
-import 'data/models/booking_model.dart';
 import 'data/models/ticket_model.dart';
 import 'data/repositories/firestore_booking_repository.dart';
 import 'firebase_options.dart';
+import 'screens/debug_tools.dart';
 import 'screens/search_results.dart';
 
 Future<void> main() async {
@@ -320,78 +320,81 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          GestureDetector(
-            onTap: () => _editStation(isOrigin: true),
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Dari',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Dari',
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                      const SizedBox(height: 4),
+                      InkWell(
+                        onTap: () => _editStation(isOrigin: true),
+                        child: Text(
                           _originController.text,
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        Divider(color: Colors.grey.shade300, height: 1),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'Ke',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
+                      ),
+                      const SizedBox(height: 12),
+                      Divider(color: Colors.grey.shade300, height: 1),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Ke',
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                      const SizedBox(height: 4),
+                      InkWell(
+                        onTap: () => _editStation(isOrigin: false),
+                        child: Text(
                           _destinationController.text,
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                      ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                GestureDetector(
+                  onTap: () {
+                    // swap origin/destination
+                    final tmp = _originController.text;
+                    setState(() {
+                      _originController.text = _destinationController.text;
+                      _destinationController.text = tmp;
+                    });
+                  },
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.swap_vert,
+                      color: Colors.grey,
+                      size: 20,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  GestureDetector(
-                    onTap: () {
-                      // swap origin/destination
-                      final tmp = _originController.text;
-                      setState(() {
-                        _originController.text = _destinationController.text;
-                        _destinationController.text = tmp;
-                      });
-                    },
-                    child: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.swap_vert,
-                        color: Colors.grey,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 16),
@@ -660,7 +663,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Expanded(
             child: ElevatedButton.icon(
-              onPressed: () => _openDebugScreen(_DebugSection.booking),
+              onPressed: () => _openDebugScreen(DebugSection.booking),
               icon: const Icon(Icons.bookmark_outline),
               label: const Text('Booking Debug'),
             ),
@@ -668,7 +671,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: ElevatedButton.icon(
-              onPressed: () => _openDebugScreen(_DebugSection.ticket),
+              onPressed: () => _openDebugScreen(DebugSection.ticket),
               icon: const Icon(Icons.train_outlined),
               label: const Text('Ticket Debug'),
             ),
@@ -678,10 +681,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _openDebugScreen(_DebugSection section) async {
+  Future<void> _openDebugScreen(DebugSection section) async {
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => _DebugToolsScreen(
+        builder: (_) => DebugToolsScreen(
           bookingRepository: _bookingRepository,
           initialSection: section,
         ),
@@ -781,16 +784,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  Text(
-                    ticket.seatsLeft != null
-                        ? '${ticket.seatsLeft} kursi tersisa'
-                        : 'Kursi tersisa belum tersedia',
-                    style: const TextStyle(
-                      color: Color(0xFFF81818),
-                      fontSize: 18 * 0.72,
-                      fontWeight: FontWeight.w500,
+                  if (ticket.seatsLeft != null && ticket.seatsLeft! < 10)
+                    Text(
+                      '${ticket.seatsLeft} kursi tersisa',
+                      style: const TextStyle(
+                        color: Color(0xFFF81818),
+                        fontSize: 18 * 0.72,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
                 ],
               ),
             ],
@@ -910,804 +912,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-}
-
-enum _DebugSection { booking, ticket }
-
-class _DebugToolsScreen extends StatefulWidget {
-  const _DebugToolsScreen({
-    required this.bookingRepository,
-    required this.initialSection,
-  });
-
-  final BookingRepository bookingRepository;
-  final _DebugSection initialSection;
-
-  @override
-  State<_DebugToolsScreen> createState() => _DebugToolsScreenState();
-}
-
-class _DebugToolsScreenState extends State<_DebugToolsScreen> {
-  late _DebugSection _selectedSection;
-
-  final TextEditingController _userIdController = TextEditingController(
-    text: '1',
-  );
-  final TextEditingController _ticketIdController = TextEditingController();
-  final TextEditingController _seatsController = TextEditingController(
-    text: 'A1',
-  );
-  final TextEditingController _bookingIdController = TextEditingController();
-  String _bookingStatus = 'confirmed';
-  String? _bookingMessage;
-  bool _bookingError = false;
-
-  final TextEditingController _manageTicketIdController =
-      TextEditingController();
-  final TextEditingController _trainController = TextEditingController();
-  final TextEditingController _originController = TextEditingController();
-  final TextEditingController _destinationController = TextEditingController();
-  final TextEditingController _dateController = TextEditingController(
-    text: '2026-05-01 09:30',
-  );
-  final TextEditingController _seatClassController = TextEditingController(
-    text: 'Ekonomi',
-  );
-  final TextEditingController _departTimeController = TextEditingController(
-    text: '09:30',
-  );
-  final TextEditingController _arriveTimeController = TextEditingController(
-    text: '12:20',
-  );
-  final TextEditingController _durationController = TextEditingController(
-    text: '2j 50m',
-  );
-  final TextEditingController _oldPriceController = TextEditingController(
-    text: '180000',
-  );
-  final TextEditingController _priceController = TextEditingController(
-    text: '150000',
-  );
-  final TextEditingController _seatsLeftController = TextEditingController(
-    text: '6',
-  );
-  String _ticketStatus = 'available';
-  String? _ticketMessage;
-  bool _ticketError = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedSection = widget.initialSection;
-  }
-
-  @override
-  void dispose() {
-    _userIdController.dispose();
-    _ticketIdController.dispose();
-    _seatsController.dispose();
-    _bookingIdController.dispose();
-    _manageTicketIdController.dispose();
-    _trainController.dispose();
-    _originController.dispose();
-    _destinationController.dispose();
-    _dateController.dispose();
-    _seatClassController.dispose();
-    _departTimeController.dispose();
-    _arriveTimeController.dispose();
-    _durationController.dispose();
-    _oldPriceController.dispose();
-    _priceController.dispose();
-    _seatsLeftController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Debug Tools')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SegmentedButton<_DebugSection>(
-              segments: const [
-                ButtonSegment<_DebugSection>(
-                  value: _DebugSection.booking,
-                  icon: Icon(Icons.bookmark_outline),
-                  label: Text('Booking'),
-                ),
-                ButtonSegment<_DebugSection>(
-                  value: _DebugSection.ticket,
-                  icon: Icon(Icons.train_outlined),
-                  label: Text('Ticket'),
-                ),
-              ],
-              selected: {_selectedSection},
-              onSelectionChanged: (selection) {
-                setState(() {
-                  _selectedSection = selection.first;
-                });
-              },
-            ),
-            const SizedBox(height: 16),
-            if (_selectedSection == _DebugSection.booking)
-              _buildBookingCrudSection()
-            else
-              _buildTicketCrudSection(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBookingCrudSection() {
-    final userId = _userIdController.text.trim();
-    final ticketId = _ticketIdController.text.trim();
-    final canRead = userId.isNotEmpty && ticketId.isNotEmpty;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Booking CRUD (Debug)',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _userIdController,
-          onChanged: (_) => setState(() {}),
-          decoration: const InputDecoration(
-            labelText: 'User ID',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _ticketIdController,
-          onChanged: (_) => setState(() {}),
-          decoration: const InputDecoration(
-            labelText: 'Ticket ID',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _seatsController,
-          decoration: const InputDecoration(
-            labelText: 'Seat numbers (comma separated, e.g. A1,A2)',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: ElevatedButton(
-                onPressed: _onCreateBookingPressed,
-                child: const Text('Create Booking'),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: ElevatedButton(
-                onPressed: _onCompletePendingPressed,
-                child: const Text('Complete Pending'),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _bookingIdController,
-          decoration: const InputDecoration(
-            labelText: 'Booking document ID (for update/delete)',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 12),
-        DropdownButtonFormField<String>(
-          initialValue: _bookingStatus,
-          decoration: const InputDecoration(
-            labelText: 'New status',
-            border: OutlineInputBorder(),
-          ),
-          items: const [
-            DropdownMenuItem(value: 'pending', child: Text('pending')),
-            DropdownMenuItem(value: 'confirmed', child: Text('confirmed')),
-            DropdownMenuItem(value: 'completed', child: Text('completed')),
-            DropdownMenuItem(value: 'cancelled', child: Text('cancelled')),
-          ],
-          onChanged: (value) {
-            if (value == null) {
-              return;
-            }
-            setState(() {
-              _bookingStatus = value;
-            });
-          },
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: _onUpdateBookingPressed,
-                child: const Text('Update Status'),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: OutlinedButton(
-                onPressed: _onDeleteBookingPressed,
-                child: const Text('Delete Booking'),
-              ),
-            ),
-          ],
-        ),
-        if (_bookingMessage != null) ...[
-          const SizedBox(height: 12),
-          Text(
-            _bookingMessage!,
-            style: TextStyle(
-              color: _bookingError ? Colors.red : Colors.green,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-        const SizedBox(height: 12),
-        if (!canRead)
-          const Text(
-            'Isi User ID dan Ticket ID untuk membaca daftar booking.',
-            style: TextStyle(color: Colors.black54),
-          )
-        else
-          StreamBuilder<List<BookingModel>>(
-            stream: widget.bookingRepository.watchBookings(
-              userId: userId,
-              ticketId: ticketId,
-            ),
-            builder: (context, snapshot) {
-              if (snapshot.hasError) {
-                return Text(
-                  'Gagal memuat booking: ${snapshot.error}',
-                  style: const TextStyle(color: Colors.red),
-                );
-              }
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                  child: CircularProgressIndicator(),
-                );
-              }
-              final bookings = snapshot.data ?? const <BookingModel>[];
-              if (bookings.isEmpty) {
-                return const Text('Belum ada booking untuk filter ini.');
-              }
-
-              return Column(
-                children: bookings
-                    .map(
-                      (booking) => Card(
-                        child: ListTile(
-                          title: Text(
-                            '${booking.seatNumber} • ${booking.status}',
-                          ),
-                          subtitle: Text(
-                            'ID: ${booking.id}\n'
-                            'User: ${booking.userId} • Ticket: ${booking.ticketId}',
-                          ),
-                          isThreeLine: true,
-                        ),
-                      ),
-                    )
-                    .toList(growable: false),
-              );
-            },
-          ),
-      ],
-    );
-  }
-
-  Widget _buildTicketCrudSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Ticket CRUD (Debug)',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _manageTicketIdController,
-          decoration: const InputDecoration(
-            labelText: 'Ticket ID (required for update/delete)',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _trainController,
-          decoration: const InputDecoration(
-            labelText: 'Train',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _originController,
-                decoration: const InputDecoration(
-                  labelText: 'Origin',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: TextField(
-                controller: _destinationController,
-                decoration: const InputDecoration(
-                  labelText: 'Destination',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _dateController,
-          decoration: const InputDecoration(
-            labelText: 'Date (YYYY-MM-DD HH:mm)',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _departTimeController,
-                decoration: const InputDecoration(
-                  labelText: 'Depart time',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: TextField(
-                controller: _arriveTimeController,
-                decoration: const InputDecoration(
-                  labelText: 'Arrive time',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _durationController,
-          decoration: const InputDecoration(
-            labelText: 'Duration',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _seatClassController,
-          decoration: const InputDecoration(
-            labelText: 'Seat class',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _oldPriceController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Old price (optional)',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: TextField(
-                controller: _priceController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Price',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: TextField(
-                controller: _seatsLeftController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Seats left',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        DropdownButtonFormField<String>(
-          initialValue: _ticketStatus,
-          decoration: const InputDecoration(
-            labelText: 'Status',
-            border: OutlineInputBorder(),
-          ),
-          items: const [
-            DropdownMenuItem(value: 'available', child: Text('available')),
-            DropdownMenuItem(value: 'sold_out', child: Text('sold_out')),
-            DropdownMenuItem(value: 'inactive', child: Text('inactive')),
-          ],
-          onChanged: (value) {
-            if (value == null) {
-              return;
-            }
-            setState(() {
-              _ticketStatus = value;
-            });
-          },
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: ElevatedButton(
-                onPressed: _onCreateTicketPressed,
-                child: const Text('Create Ticket'),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: OutlinedButton(
-                onPressed: _onUpdateTicketPressed,
-                child: const Text('Update Ticket'),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: OutlinedButton(
-                onPressed: _onDeleteTicketPressed,
-                child: const Text('Delete Ticket'),
-              ),
-            ),
-          ],
-        ),
-        if (_ticketMessage != null) ...[
-          const SizedBox(height: 12),
-          Text(
-            _ticketMessage!,
-            style: TextStyle(
-              color: _ticketError ? Colors.red : Colors.green,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-        const SizedBox(height: 12),
-        StreamBuilder<List<TicketModel>>(
-          stream: widget.bookingRepository.watchAllTickets(),
-          builder: (context, snapshot) {
-            if (snapshot.hasError) {
-              return Text(
-                'Gagal memuat ticket: ${snapshot.error}',
-                style: const TextStyle(color: Colors.red),
-              );
-            }
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12),
-                child: CircularProgressIndicator(),
-              );
-            }
-            final tickets = snapshot.data ?? const <TicketModel>[];
-            if (tickets.isEmpty) {
-              return const Text('Belum ada tiket.');
-            }
-
-            return Column(
-              children: tickets
-                  .map(
-                    (ticket) => Card(
-                      child: ListTile(
-                        title: Text(
-                          '${ticket.train} • ${ticket.originStation} → ${ticket.destinationStation}',
-                        ),
-                        subtitle: Text(
-                          'ID: ${ticket.id}\n'
-                          'Status: ${ticket.status} • Harga: ${ticket.price ?? 0}',
-                        ),
-                        isThreeLine: true,
-                        onTap: () => _fillTicketForm(ticket),
-                      ),
-                    ),
-                  )
-                  .toList(growable: false),
-            );
-          },
-        ),
-      ],
-    );
-  }
-
-  Future<void> _onCreateBookingPressed() async {
-    final userId = _userIdController.text.trim();
-    final ticketId = _ticketIdController.text.trim();
-    final seats = _seatsController.text
-        .split(',')
-        .map((seat) => seat.trim())
-        .where((seat) => seat.isNotEmpty)
-        .toSet()
-        .toList(growable: false);
-
-    if (userId.isEmpty || ticketId.isEmpty || seats.isEmpty) {
-      _setBookingMessage(
-        'User ID, Ticket ID, dan seat number wajib diisi.',
-        isError: true,
-      );
-      return;
-    }
-
-    try {
-      await widget.bookingRepository.bookSeats(
-        userId: userId,
-        ticketId: ticketId,
-        seatNumbers: seats,
-      );
-      _setBookingMessage('Booking berhasil dibuat (${seats.length} seat).');
-    } on FirebaseException catch (error) {
-      _setBookingMessage('Create gagal: ${error.message}', isError: true);
-    } on StateError catch (error) {
-      _setBookingMessage('Create gagal: ${error.message}', isError: true);
-    }
-  }
-
-  Future<void> _onCompletePendingPressed() async {
-    final userId = _userIdController.text.trim();
-    final ticketId = _ticketIdController.text.trim();
-    if (userId.isEmpty || ticketId.isEmpty) {
-      _setBookingMessage('User ID dan Ticket ID wajib diisi.', isError: true);
-      return;
-    }
-
-    try {
-      await widget.bookingRepository.verifyAllPending(
-        userId: userId,
-        ticketId: ticketId,
-      );
-      _setBookingMessage('Semua booking pending berhasil diubah ke completed.');
-    } on FirebaseException catch (error) {
-      _setBookingMessage(
-        'Complete pending gagal: ${error.message}',
-        isError: true,
-      );
-    }
-  }
-
-  Future<void> _onUpdateBookingPressed() async {
-    final bookingId = _bookingIdController.text.trim();
-    if (bookingId.isEmpty) {
-      _setBookingMessage('Booking ID wajib diisi untuk update.', isError: true);
-      return;
-    }
-
-    try {
-      await widget.bookingRepository.updateBookingStatus(
-        bookingId: bookingId,
-        status: _bookingStatus,
-      );
-      _setBookingMessage('Status booking berhasil diubah ke $_bookingStatus.');
-    } on FirebaseException catch (error) {
-      _setBookingMessage('Update gagal: ${error.message}', isError: true);
-    }
-  }
-
-  Future<void> _onDeleteBookingPressed() async {
-    final bookingId = _bookingIdController.text.trim();
-    if (bookingId.isEmpty) {
-      _setBookingMessage('Booking ID wajib diisi untuk delete.', isError: true);
-      return;
-    }
-
-    try {
-      await widget.bookingRepository.deleteBooking(bookingId: bookingId);
-      _setBookingMessage('Booking berhasil dihapus.');
-    } on FirebaseException catch (error) {
-      _setBookingMessage('Delete gagal: ${error.message}', isError: true);
-    }
-  }
-
-  Future<void> _onCreateTicketPressed() async {
-    final parsed = _parseTicketForm();
-    if (parsed == null) {
-      return;
-    }
-
-    try {
-      final ticketId = await widget.bookingRepository.createTicket(
-        originStation: parsed.originStation,
-        destinationStation: parsed.destinationStation,
-        date: parsed.date,
-        train: parsed.train,
-        status: parsed.status,
-        seatClass: parsed.seatClass,
-        departTime: parsed.departTime,
-        arriveTime: parsed.arriveTime,
-        duration: parsed.duration,
-        oldPrice: parsed.oldPrice,
-        price: parsed.price,
-        seatsLeft: parsed.seatsLeft,
-      );
-      _manageTicketIdController.text = ticketId;
-      _setTicketMessage('Ticket berhasil dibuat: $ticketId');
-    } on FirebaseException catch (error) {
-      _setTicketMessage('Create ticket gagal: ${error.message}', isError: true);
-    }
-  }
-
-  Future<void> _onUpdateTicketPressed() async {
-    final ticketId = _manageTicketIdController.text.trim();
-    if (ticketId.isEmpty) {
-      _setTicketMessage('Ticket ID wajib diisi untuk update.', isError: true);
-      return;
-    }
-
-    final parsed = _parseTicketForm();
-    if (parsed == null) {
-      return;
-    }
-
-    try {
-      await widget.bookingRepository.updateTicket(
-        ticketId: ticketId,
-        originStation: parsed.originStation,
-        destinationStation: parsed.destinationStation,
-        date: parsed.date,
-        train: parsed.train,
-        status: parsed.status,
-        seatClass: parsed.seatClass,
-        departTime: parsed.departTime,
-        arriveTime: parsed.arriveTime,
-        duration: parsed.duration,
-        oldPrice: parsed.oldPrice,
-        price: parsed.price,
-        seatsLeft: parsed.seatsLeft,
-      );
-      _setTicketMessage('Ticket berhasil diupdate.');
-    } on FirebaseException catch (error) {
-      _setTicketMessage('Update ticket gagal: ${error.message}', isError: true);
-    }
-  }
-
-  Future<void> _onDeleteTicketPressed() async {
-    final ticketId = _manageTicketIdController.text.trim();
-    if (ticketId.isEmpty) {
-      _setTicketMessage('Ticket ID wajib diisi untuk delete.', isError: true);
-      return;
-    }
-
-    try {
-      await widget.bookingRepository.deleteTicket(ticketId: ticketId);
-      _setTicketMessage('Ticket berhasil dihapus.');
-    } on FirebaseException catch (error) {
-      _setTicketMessage('Delete ticket gagal: ${error.message}', isError: true);
-    }
-  }
-
-  _ParsedTicketForm? _parseTicketForm() {
-    final train = _trainController.text.trim();
-    final origin = _originController.text.trim();
-    final destination = _destinationController.text.trim();
-    final parsedDate = DateTime.tryParse(_dateController.text.trim());
-    final parsedPrice = int.tryParse(_priceController.text.trim());
-    final parsedOldPrice = int.tryParse(_oldPriceController.text.trim());
-    final parsedSeatsLeft = int.tryParse(_seatsLeftController.text.trim());
-
-    if (train.isEmpty ||
-        origin.isEmpty ||
-        destination.isEmpty ||
-        parsedDate == null ||
-        parsedPrice == null ||
-        parsedSeatsLeft == null) {
-      _setTicketMessage(
-        'Isi train, origin, destination, date valid, price, dan seats left.',
-        isError: true,
-      );
-      return null;
-    }
-
-    return _ParsedTicketForm(
-      train: train,
-      originStation: origin,
-      destinationStation: destination,
-      date: parsedDate,
-      status: _ticketStatus,
-      seatClass: _seatClassController.text.trim(),
-      departTime: _departTimeController.text.trim(),
-      arriveTime: _arriveTimeController.text.trim(),
-      duration: _durationController.text.trim(),
-      oldPrice: parsedOldPrice,
-      price: parsedPrice,
-      seatsLeft: parsedSeatsLeft,
-    );
-  }
-
-  void _fillTicketForm(TicketModel ticket) {
-    setState(() {
-      _manageTicketIdController.text = ticket.id;
-      _trainController.text = ticket.train;
-      _originController.text = ticket.originStation;
-      _destinationController.text = ticket.destinationStation;
-      _dateController.text = ticket.date.toIso8601String().substring(0, 16);
-      _seatClassController.text = ticket.seatClass ?? '';
-      _departTimeController.text = ticket.departTime ?? '';
-      _arriveTimeController.text = ticket.arriveTime ?? '';
-      _durationController.text = ticket.duration ?? '';
-      _oldPriceController.text = ticket.oldPrice?.toString() ?? '';
-      _priceController.text = ticket.price?.toString() ?? '';
-      _seatsLeftController.text = ticket.seatsLeft?.toString() ?? '';
-      _ticketStatus = ticket.status;
-    });
-  }
-
-  void _setBookingMessage(String message, {bool isError = false}) {
-    setState(() {
-      _bookingMessage = message;
-      _bookingError = isError;
-    });
-  }
-
-  void _setTicketMessage(String message, {bool isError = false}) {
-    setState(() {
-      _ticketMessage = message;
-      _ticketError = isError;
-    });
-  }
-}
-
-class _ParsedTicketForm {
-  _ParsedTicketForm({
-    required this.train,
-    required this.originStation,
-    required this.destinationStation,
-    required this.date,
-    required this.status,
-    required this.seatClass,
-    required this.departTime,
-    required this.arriveTime,
-    required this.duration,
-    required this.oldPrice,
-    required this.price,
-    required this.seatsLeft,
-  });
-
-  final String train;
-  final String originStation;
-  final String destinationStation;
-  final DateTime date;
-  final String status;
-  final String seatClass;
-  final String departTime;
-  final String arriveTime;
-  final String duration;
-  final int? oldPrice;
-  final int? price;
-  final int? seatsLeft;
 }
 
 class _StationPickerDialog extends StatefulWidget {

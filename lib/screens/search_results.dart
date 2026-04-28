@@ -262,17 +262,18 @@ class SearchResultsPage extends StatelessWidget {
                             color: Color(0xFFE20000),
                           ),
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          ticket.seatsLeft != null
-                              ? '${ticket.seatsLeft} kursi tersisa'
-                              : 'N/A',
-                          style: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFFE63131),
+                        if (ticket.seatsLeft != null &&
+                            ticket.seatsLeft! < 10) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            '${ticket.seatsLeft} kursi tersisa',
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFFE63131),
+                            ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ],
@@ -371,7 +372,7 @@ class SearchResultsPage extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 6),
               child: const Center(
                 child: Text(
-                  'Termuah di tanggal ini!',
+                  'Termurah di tanggal ini!',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
