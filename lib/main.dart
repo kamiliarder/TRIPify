@@ -280,7 +280,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: 4),
                       const Text(
-                        'Gambir (GMR)',
+                        'Bandung (BD)',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
