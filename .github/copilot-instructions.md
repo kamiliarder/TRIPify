@@ -3,6 +3,15 @@ description: 'Instructions for writing Dart and Flutter code following the offic
 applyTo: '**/*.dart'
 ---
 
+## AI Agent Notes
+
+- **Purpose:** Quick guidance for automated coding agents working on this repo.
+- **Entry point:** `lib/main.dart` is the Flutter app entry.
+- **Common commands:** `flutter pub get`, `flutter run -d <device>`, `flutter build apk|ios|windows`, `flutter test`.
+- **Key folders:** `lib/data/models`, `lib/data/repositories`, `lib/screens`, `assets/`.
+- **Conventions:** Follow the Dart/Flutter guidance below (Effective Dart, MVVM, repository pattern).
+- **Where to link:** For detailed project notes and DB schema, consult [README.md](README.md).
+
 # Dart and Flutter
 
 Best practices recommended by the Dart and Flutter teams. These instructions were taken from [Effective Dart](https://dart.dev/effective-dart) and [Architecture Recommendations](https://docs.flutter.dev/app-architecture/recommendations).

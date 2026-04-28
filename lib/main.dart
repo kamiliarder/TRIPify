@@ -8,6 +8,7 @@ import 'data/models/booking_model.dart';
 import 'data/models/ticket_model.dart';
 import 'data/repositories/firestore_booking_repository.dart';
 import 'firebase_options.dart';
+import 'screens/search_results.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,6 +41,65 @@ class _HomeScreenState extends State<HomeScreen> {
   final BookingRepository _bookingRepository = FirestoreBookingRepository(
     firestore: FirebaseFirestore.instance,
   );
+
+  // --- booking form state
+  final TextEditingController _originController = TextEditingController(
+    text: 'Bandung (BD)',
+  );
+  final TextEditingController _destinationController = TextEditingController(
+    text: 'Surabaya (SBY)',
+  );
+  DateTime _selectedDate = DateTime.now();
+  int _passengers = 1;
+
+  // Indonesian train stations
+  static const List<String> _indonesianStations = [
+    'Jakarta (CGK)',
+    'Bandung (BD)',
+    'Surabaya (SBY)',
+    'Yogyakarta (YIA)',
+    'Medan (KNO)',
+    'Semarang (SRG)',
+    'Makassar (UPG)',
+    'Denpasar (DPS)',
+    'Palembang (PLM)',
+    'Balikpapan (BPN)',
+    'Banjarmasin (BJM)',
+    'Jambi (JSM)',
+    'Riau (PKU)',
+    'Padang (PDG)',
+    'Pontianak (PNK)',
+    'Samarinda (SRI)',
+    'Kupang (KOE)',
+    'Manado (MDC)',
+    'Bandarlampung (TKG)',
+    'Malang (MLG)',
+    'Solo (SLO)',
+    'Sleman (SLM)',
+    'Kediri (KDI)',
+    'Jombang (JMB)',
+    'Gresik (GSK)',
+    'Tuban (TBN)',
+    'Cilacap (CLP)',
+    'Purwokerto (PWK)',
+    'Pekalongan (PKL)',
+    'Tegal (TGL)',
+    'Cirebon (CRB)',
+    'Indramayu (IDM)',
+    'Karawang (KRW)',
+    'Bekasi (BKS)',
+    'Depok (DPK)',
+    'Tangerang (TNG)',
+    'Serang (SRG)',
+    'Bogor (BGR)',
+  ];
+
+  @override
+  void dispose() {
+    _originController.dispose();
+    _destinationController.dispose();
+    super.dispose();
+  }
 
   static const List<String> recentSearches = [
     'Bandung → Jakarta\n25 Oktober 2024',
@@ -260,140 +320,287 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Dari',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Bandung (BD)',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Divider(color: Colors.grey.shade300, height: 1),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Ke',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Surabaya (SBY)',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.swap_vert,
-                    color: Colors.grey,
-                    size: 20,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            padding: const EdgeInsets.all(12),
-            child: const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Tanggal',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  'Kamis, 3 Okt',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Penumpang',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  '1 Penumpang',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          Container(
-            width: double.infinity,
-            height: 48,
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFC107),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Center(
+          GestureDetector(
+            onTap: () => _editStation(isOrigin: true),
+            child: Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.all(12),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text(
-                    'Cari Tiket',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Dari',
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _originController.text,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Divider(color: Colors.grey.shade300, height: 1),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Ke',
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _destinationController.text,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  SizedBox(width: 8),
-                  Icon(Icons.search, color: Colors.black87),
+                  const SizedBox(width: 12),
+                  GestureDetector(
+                    onTap: () {
+                      // swap origin/destination
+                      final tmp = _originController.text;
+                      setState(() {
+                        _originController.text = _destinationController.text;
+                        _destinationController.text = tmp;
+                      });
+                    },
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.swap_vert,
+                        color: Colors.grey,
+                        size: 20,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
           ),
+          const SizedBox(height: 16),
+          GestureDetector(
+            onTap: _pickDate,
+            child: Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Tanggal',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _formatDate(_selectedDate),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          GestureDetector(
+            onTap: _pickPassengers,
+            child: Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Penumpang',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '$_passengers Penumpang',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          InkWell(
+            onTap: _onSearchPressed,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              width: double.infinity,
+              height: 48,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFC107),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Center(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Cari Tiket',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Icon(Icons.search, color: Colors.black87),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  String _formatDate(DateTime d) {
+    const weekdays = [
+      'Minggu',
+      'Senin',
+      'Selasa',
+      'Rabu',
+      'Kamis',
+      'Jumat',
+      'Sabtu',
+    ];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des',
+    ];
+    final wd = weekdays[d.weekday % 7];
+    final m = months[d.month - 1];
+    return '$wd, ${d.day} $m';
+  }
+
+  Future<void> _editStation({required bool isOrigin}) async {
+    final controller = isOrigin ? _originController : _destinationController;
+    final selected = await showDialog<String>(
+      context: context,
+      builder: (context) => _StationPickerDialog(
+        stations: _indonesianStations,
+        title: isOrigin ? 'Pilih Stasiun Asal' : 'Pilih Stasiun Tujuan',
+      ),
+    );
+    if (selected != null) {
+      setState(() {
+        controller.text = selected;
+      });
+    }
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedDate = picked;
+      });
+    }
+  }
+
+  Future<void> _pickPassengers() async {
+    final result = await showDialog<int>(
+      context: context,
+      builder: (context) {
+        var count = _passengers;
+        return StatefulBuilder(
+          builder: (context, setStateSB) {
+            return AlertDialog(
+              title: const Text('Jumlah Penumpang'),
+              content: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    onPressed: () =>
+                        setStateSB(() => count = (count - 1).clamp(1, 99)),
+                    icon: const Icon(Icons.remove),
+                  ),
+                  Text('$count', style: const TextStyle(fontSize: 18)),
+                  IconButton(
+                    onPressed: () =>
+                        setStateSB(() => count = (count + 1).clamp(1, 99)),
+                    icon: const Icon(Icons.add),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(null),
+                  child: const Text('Batal'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(count),
+                  child: const Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+    if (result != null) {
+      setState(() => _passengers = result);
+    }
+  }
+
+  void _onSearchPressed() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => SearchResultsPage(
+          origin: _originController.text,
+          destination: _destinationController.text,
+          date: _selectedDate,
+          passengers: _passengers,
+          bookingRepository: _bookingRepository,
+        ),
       ),
     );
   }
@@ -1501,4 +1708,117 @@ class _ParsedTicketForm {
   final int? oldPrice;
   final int? price;
   final int? seatsLeft;
+}
+
+class _StationPickerDialog extends StatefulWidget {
+  const _StationPickerDialog({required this.stations, required this.title});
+
+  final List<String> stations;
+  final String title;
+
+  @override
+  State<_StationPickerDialog> createState() => _StationPickerDialogState();
+}
+
+class _StationPickerDialogState extends State<_StationPickerDialog> {
+  late List<String> filteredStations;
+  final TextEditingController searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    filteredStations = widget.stations;
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
+  void _filterStations(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        filteredStations = widget.stations;
+      } else {
+        filteredStations = widget.stations
+            .where(
+              (station) => station.toLowerCase().contains(query.toLowerCase()),
+            )
+            .toList();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: searchController,
+                  onChanged: _filterStations,
+                  decoration: InputDecoration(
+                    hintText: 'Cari stasiun...',
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: filteredStations.isEmpty
+                ? const Center(
+                    child: Text(
+                      'Stasiun tidak ditemukan',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: filteredStations.length,
+                    itemBuilder: (context, index) {
+                      final station = filteredStations[index];
+                      return ListTile(
+                        title: Text(station),
+                        onTap: () => Navigator.of(context).pop(station),
+                      );
+                    },
+                  ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () => Navigator.of(context).pop(null),
+                child: const Text('Batal'),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
