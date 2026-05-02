@@ -635,11 +635,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               }
 
-              final tickets = snapshot.data ?? const <TicketModel>[];
+              final tickets = (snapshot.data ?? const <TicketModel>[])
+                  .where((ticket) => ticket.oldPrice != null)
+                  .toList(growable: false);
               if (tickets.isEmpty) {
                 return const Padding(
                   padding: EdgeInsets.only(bottom: 16),
-                  child: Text('Belum ada tiket tersedia.'),
+                  child: Text('Belum ada tiket diskon tersedia.'),
                 );
               }
 
@@ -713,34 +715,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 36,
-                height: 24,
-                alignment: Alignment.centerLeft,
-                child: RichText(
-                  text: const TextSpan(
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.5,
-                    ),
-                    children: [
-                      TextSpan(
-                        text: 'K',
-                        style: TextStyle(color: Color(0xFF223E99)),
-                      ),
-                      TextSpan(
-                        text: 'A',
-                        style: TextStyle(color: Color(0xFF223E99)),
-                      ),
-                      TextSpan(
-                        text: 'I',
-                        style: TextStyle(color: Color(0xFFED6D1D)),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              Container(width: 36, height: 24, alignment: Alignment.centerLeft),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(

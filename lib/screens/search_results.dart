@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../data/models/ticket_model.dart';
 import '../data/repositories/firestore_booking_repository.dart';
+<<<<<<< HEAD
+=======
+import 'seat_selection.dart';
+>>>>>>> 1720f050641ae31583f5184049b74f40c1702131
 
 class SearchResultsPage extends StatelessWidget {
   const SearchResultsPage({
@@ -189,6 +193,10 @@ class SearchResultsPage extends StatelessWidget {
                       (index) => Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: _buildTicketCard(
+<<<<<<< HEAD
+=======
+                          context,
+>>>>>>> 1720f050641ae31583f5184049b74f40c1702131
                           filtered[index],
                           isFirstForDate: index == 0,
                         ),
@@ -204,6 +212,7 @@ class SearchResultsPage extends StatelessWidget {
     );
   }
 
+<<<<<<< HEAD
   Widget _buildTicketCard(TicketModel ticket, {bool isFirstForDate = false}) {
     return Container(
       decoration: BoxDecoration(
@@ -236,20 +245,133 @@ class SearchResultsPage extends StatelessWidget {
                             ticket.train,
                             style: const TextStyle(
                               fontSize: 13,
+=======
+  Widget _buildTicketCard(
+    BuildContext context,
+    TicketModel ticket, {
+    bool isFirstForDate = false,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => SeatSelectionPage(
+              ticket: ticket,
+              passengers: passengers,
+              bookingRepository: bookingRepository,
+            ),
+          ),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Train name, class, and price row
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              ticket.train,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              ticket.seatClass ?? 'Ekonomi',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF464646),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            _formatIdr(ticket.price),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFFE20000),
+                            ),
+                          ),
+                          if (ticket.seatsLeft != null &&
+                              ticket.seatsLeft! < 10) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              '${ticket.seatsLeft} kursi tersisa',
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFFE63131),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Times and station row
+                  Row(
+                    children: [
+                      // Departure
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            ticket.departTime ?? '-',
+                            style: const TextStyle(
+                              fontSize: 10,
+>>>>>>> 1720f050641ae31583f5184049b74f40c1702131
                               fontWeight: FontWeight.w600,
                               color: Colors.black,
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
+<<<<<<< HEAD
                             ticket.seatClass ?? 'Ekonomi',
                             style: const TextStyle(
                               fontSize: 11,
                               color: Color(0xFF464646),
+=======
+                            ticket.originStation,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: Color(0xFF7C7C7C),
+>>>>>>> 1720f050641ae31583f5184049b74f40c1702131
                             ),
                           ),
                         ],
                       ),
+<<<<<<< HEAD
                     ),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
@@ -382,6 +504,87 @@ class SearchResultsPage extends StatelessWidget {
               ),
             ),
         ],
+=======
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Container(
+                                      height: 1,
+                                      color: const Color(0xFFD1D1D1),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                ticket.duration ?? '-',
+                                style: const TextStyle(
+                                  fontSize: 7,
+                                  color: Color(0xFF8C8C8C),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      // Arrival
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            ticket.arriveTime ?? '-',
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            ticket.destinationStation,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: Color(0xFF7C7C7C),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            // Optional badge for cheapest
+            if (isFirstForDate)
+              Container(
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFE63131),
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(8),
+                    bottomRight: Radius.circular(8),
+                  ),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: const Center(
+                  child: Text(
+                    'Termurah di tanggal ini!',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+>>>>>>> 1720f050641ae31583f5184049b74f40c1702131
       ),
     );
   }
