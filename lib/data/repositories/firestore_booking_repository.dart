@@ -6,10 +6,7 @@ import '../models/ticket_model.dart';
 abstract class BookingRepository {
   Stream<List<TicketModel>> watchAvailableTickets();
   Stream<List<TicketModel>> watchAllTickets();
-<<<<<<< HEAD
-=======
   Stream<Set<String>> watchUnavailableSeats({required String ticketId});
->>>>>>> 1720f050641ae31583f5184049b74f40c1702131
 
   Stream<List<BookingModel>> watchBookings({
     required String userId,
@@ -132,8 +129,6 @@ class FirestoreBookingRepository implements BookingRepository {
   }
 
   @override
-<<<<<<< HEAD
-=======
   Stream<Set<String>> watchUnavailableSeats({required String ticketId}) {
     return _bookings.where('ticketId', isEqualTo: ticketId).snapshots().map((
       snapshot,
@@ -148,7 +143,6 @@ class FirestoreBookingRepository implements BookingRepository {
   }
 
   @override
->>>>>>> 1720f050641ae31583f5184049b74f40c1702131
   Future<void> bookSeats({
     required String userId,
     required String ticketId,
