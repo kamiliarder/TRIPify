@@ -6,6 +6,7 @@ import '../models/ticket_model.dart';
 abstract class BookingRepository {
   Stream<List<TicketModel>> watchAvailableTickets();
   Stream<List<TicketModel>> watchAllTickets();
+  Stream<Set<String>> watchUnavailableSeats({required String ticketId});
 
   Stream<List<BookingModel>> watchBookings({
     required String userId,
@@ -124,6 +125,20 @@ class FirestoreBookingRepository implements BookingRepository {
       final sortedTickets = [...tickets]
         ..sort((left, right) => left.date.compareTo(right.date));
       return sortedTickets;
+    });
+  }
+
+  @override
+  Stream<Set<String>> watchUnavailableSeats({required String ticketId}) {
+    return _bookings.where('ticketId', isEqualTo: ticketId).snapshots().map((
+      snapshot,
+    ) {
+      final blocked = snapshot.docs
+          .map(BookingModel.fromFirestore)
+          .where((booking) => booking.status != 'cancelled')
+          .map((booking) => booking.seatNumber)
+          .toSet();
+      return blocked;
     });
   }
 
