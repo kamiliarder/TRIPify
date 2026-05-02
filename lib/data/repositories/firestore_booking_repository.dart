@@ -59,6 +59,8 @@ abstract class BookingRepository {
 
   Future<void> deleteTicket({required String ticketId});
 
+  Future<int> getBookingSequence({required String bookingId});
+
   Future<void> verifyAllPending({
     required String userId,
     required String ticketId,
@@ -266,6 +268,21 @@ class FirestoreBookingRepository implements BookingRepository {
   @override
   Future<void> deleteTicket({required String ticketId}) async {
     await _tickets.doc(ticketId).delete();
+  }
+
+  @override
+  Future<int> getBookingSequence({required String bookingId}) async {
+    final snapshot = await _bookings
+        .orderBy('createdAt')
+        .orderBy(FieldPath.documentId)
+        .get();
+    final index = snapshot.docs.indexWhere(
+      (document) => document.id == bookingId,
+    );
+    if (index < 0) {
+      throw StateError('Booking not found for sequence: $bookingId');
+    }
+    return index + 1;
   }
 
   @override

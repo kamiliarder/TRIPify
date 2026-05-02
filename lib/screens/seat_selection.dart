@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/models/ticket_model.dart';
 import '../data/repositories/firestore_booking_repository.dart';
+import 'payment_confirmation.dart';
 
 class SeatSelectionPage extends StatefulWidget {
   const SeatSelectionPage({
@@ -23,7 +24,6 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
   static const int _rowCount = 8;
 
   final Set<String> _selectedSeats = <String>{};
-  bool _submitting = false;
 
   @override
   Widget build(BuildContext context) {
@@ -214,7 +214,7 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
     final needCount = widget.passengers;
     final selectedCount = _selectedSeats.length;
     final missing = needCount - selectedCount;
-    final canSubmit = missing <= 0 && !_submitting;
+    final canSubmit = missing <= 0;
 
     return Align(
       alignment: Alignment.bottomCenter,
@@ -274,19 +274,13 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
                     ),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  child: _submitting
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text(
-                          'Konfirmasi Pilihan',
-                          style: TextStyle(
-                            fontSize: 20 * 0.57,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
+                  child: const Text(
+                    'Konfirmasi Pilihan',
+                    style: TextStyle(
+                      fontSize: 20 * 0.57,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -297,7 +291,7 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
   }
 
   void _onSeatTap({required String seatId, required bool isUnavailable}) {
-    if (isUnavailable || _submitting) {
+    if (isUnavailable) {
       return;
     }
     setState(() {
@@ -324,38 +318,18 @@ class _SeatSelectionPageState extends State<SeatSelectionPage> {
       return;
     }
 
-    setState(() => _submitting = true);
-    try {
-      await widget.bookingRepository.bookSeats(
-        userId: '1',
-        ticketId: widget.ticket.id,
-        seatNumbers: seats,
-      );
-      if (!mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Booking berhasil: ${seats.join(', ')}')),
-      );
+    final booked = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => PaymentConfirmationPage(
+          ticket: widget.ticket,
+          selectedSeats: seats,
+          passengers: widget.passengers,
+          bookingRepository: widget.bookingRepository,
+        ),
+      ),
+    );
+    if (booked == true && mounted) {
       Navigator.of(context).pop(true);
-    } on StateError catch (error) {
-      if (!mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
-    } catch (error) {
-      if (!mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Booking gagal: $error')));
-    } finally {
-      if (mounted) {
-        setState(() => _submitting = false);
-      }
     }
   }
 
