@@ -8,6 +8,7 @@ import 'data/models/ticket_model.dart';
 import 'data/repositories/firestore_booking_repository.dart';
 import 'firebase_options.dart';
 import 'screens/debug_tools.dart';
+import 'screens/orders_page.dart';
 import 'screens/search_results.dart';
 
 Future<void> main() async {
@@ -110,6 +111,31 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
+    if (_selectedNavIndex == 1) {
+      return Scaffold(
+        body: Stack(
+          children: [
+            OrdersPage(
+              bookingRepository: _bookingRepository,
+              onBackToHome: () => setState(() => _selectedNavIndex = 0),
+            ),
+            _buildBottomNavBar(bottomInset),
+          ],
+        ),
+      );
+    }
+
+    if (_selectedNavIndex == 2) {
+      return Scaffold(
+        body: Stack(
+          children: [
+            _buildProfilePlaceholder(),
+            _buildBottomNavBar(bottomInset),
+          ],
+        ),
+      );
+    }
+
     const bookingFormOverlap =
         0.0; // You can change the value, but for now its unused
     return Scaffold(
@@ -271,37 +297,20 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
 
-          Positioned(
-            bottom: 16 + bottomInset,
-            left: 24,
-            right: 24,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(32),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                child: Container(
-                  height: 64,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(32),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.5),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildNavItem(0, Icons.home_outlined, 'Beranda'),
-                      _buildNavItem(1, Icons.bookmark_outline, 'Orders'),
-                      _buildNavItem(2, Icons.person_outline, 'You'),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
+          _buildBottomNavBar(bottomInset),
         ],
+      ),
+    );
+  }
+
+  Widget _buildProfilePlaceholder() {
+    return const ColoredBox(
+      color: Color(0xFFF4F1F1),
+      child: Center(
+        child: Text(
+          'Profil akan hadir segera',
+          style: TextStyle(fontSize: 16, color: Color(0xFF666666)),
+        ),
       ),
     );
   }
@@ -884,6 +893,39 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBottomNavBar(double bottomInset) {
+    return Positioned(
+      bottom: 16 + bottomInset,
+      left: 24,
+      right: 24,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(32),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            height: 64,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(32),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.5),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildNavItem(0, Icons.home_outlined, 'Beranda'),
+                _buildNavItem(1, Icons.bookmark_outline, 'Orders'),
+                _buildNavItem(2, Icons.person_outline, 'You'),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

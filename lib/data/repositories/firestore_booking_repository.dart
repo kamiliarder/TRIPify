@@ -6,6 +6,7 @@ import '../models/ticket_model.dart';
 abstract class BookingRepository {
   Stream<List<TicketModel>> watchAvailableTickets();
   Stream<List<TicketModel>> watchAllTickets();
+  Stream<List<BookingModel>> watchUserBookings({required String userId});
   Stream<Set<String>> watchUnavailableSeats({required String ticketId});
 
   Stream<List<BookingModel>> watchBookings({
@@ -94,6 +95,18 @@ class FirestoreBookingRepository implements BookingRepository {
   }
 
   @override
+  Stream<List<BookingModel>> watchUserBookings({required String userId}) {
+    return _bookings.where('userId', isEqualTo: userId).snapshots().asyncMap((
+      snapshot,
+    ) async {
+      final bookings = snapshot.docs
+          .map(BookingModel.fromFirestore)
+          .toList(growable: false);
+      return _resolveExpiredBookingStatuses(bookings);
+    });
+  }
+
+  @override
   Stream<List<BookingModel>> watchBookings({
     required String userId,
     required String ticketId,
@@ -102,19 +115,11 @@ class FirestoreBookingRepository implements BookingRepository {
         .where('userId', isEqualTo: userId)
         .where('ticketId', isEqualTo: ticketId)
         .snapshots()
-        .map((snapshot) {
+        .asyncMap((snapshot) async {
           final bookings = snapshot.docs
               .map(BookingModel.fromFirestore)
               .toList(growable: false);
-          final sortedBookings = [...bookings]
-            ..sort((left, right) {
-              final leftDate =
-                  left.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-              final rightDate =
-                  right.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-              return rightDate.compareTo(leftDate);
-            });
-          return sortedBookings;
+          return _resolveExpiredBookingStatuses(bookings);
         });
   }
 
@@ -305,5 +310,112 @@ class FirestoreBookingRepository implements BookingRepository {
         transaction.update(booking.reference, {'status': 'completed'});
       }
     });
+  }
+
+  Future<List<BookingModel>> _resolveExpiredBookingStatuses(
+    List<BookingModel> bookings,
+  ) async {
+    if (bookings.isEmpty) {
+      return const <BookingModel>[];
+    }
+
+    final tracked = bookings
+        .where((booking) {
+          final normalizedStatus = booking.status.toLowerCase();
+          return normalizedStatus == 'pending' ||
+              normalizedStatus == 'confirmed';
+        })
+        .toList(growable: false);
+    if (tracked.isEmpty) {
+      return _sortBookingsByCreatedAtDesc(bookings);
+    }
+
+    final ticketIds = tracked
+        .map((booking) => booking.ticketId)
+        .where((ticketId) => ticketId.isNotEmpty)
+        .toSet();
+    final ticketSnapshots = await Future.wait(
+      ticketIds.map((ticketId) => _tickets.doc(ticketId).get()),
+    );
+    final ticketMap = {
+      for (final ticketSnapshot in ticketSnapshots)
+        ticketSnapshot.id: TicketModel.fromFirestore(ticketSnapshot),
+    };
+
+    final now = DateTime.now();
+    final statusUpdates = <String, String>{};
+
+    for (final booking in tracked) {
+      final ticket = ticketMap[booking.ticketId];
+      if (ticket == null || !_isTicketDateEnded(ticket.date, now)) {
+        continue;
+      }
+
+      final normalizedStatus = booking.status.toLowerCase();
+      final String? nextStatus = switch (normalizedStatus) {
+        'pending' => 'cancelled',
+        'confirmed' => 'completed',
+        _ => null,
+      };
+      if (nextStatus != null) {
+        statusUpdates[booking.id] = nextStatus;
+      }
+    }
+
+    if (statusUpdates.isNotEmpty) {
+      final batch = _firestore.batch();
+      for (final entry in statusUpdates.entries) {
+        batch.update(_bookings.doc(entry.key), {'status': entry.value});
+      }
+      await batch.commit();
+    }
+
+    final resolved = bookings
+        .map((booking) {
+          final resolvedStatus = statusUpdates[booking.id];
+          if (resolvedStatus == null) {
+            return booking;
+          }
+          return BookingModel(
+            id: booking.id,
+            userId: booking.userId,
+            ticketId: booking.ticketId,
+            seatNumber: booking.seatNumber,
+            status: resolvedStatus,
+            bookingGroupId: booking.bookingGroupId,
+            createdAt: booking.createdAt,
+          );
+        })
+        .toList(growable: false);
+
+    return _sortBookingsByCreatedAtDesc(resolved);
+  }
+
+  bool _isTicketDateEnded(DateTime ticketDate, DateTime now) {
+    final ticketDateLocal = ticketDate.toLocal();
+    final nowLocal = now.toLocal();
+    final dayEnd = DateTime(
+      ticketDateLocal.year,
+      ticketDateLocal.month,
+      ticketDateLocal.day,
+      23,
+      59,
+      59,
+      999,
+      999,
+    );
+    return nowLocal.isAfter(dayEnd);
+  }
+
+  List<BookingModel> _sortBookingsByCreatedAtDesc(List<BookingModel> bookings) {
+    final sortedBookings = [...bookings]
+      ..sort((left, right) {
+        final leftDate =
+            left.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final rightDate =
+            right.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+        return rightDate.compareTo(leftDate);
+      });
+    return sortedBookings;
   }
 }
