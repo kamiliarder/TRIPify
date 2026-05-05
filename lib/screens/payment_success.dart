@@ -4,28 +4,26 @@ import '../data/models/ticket_model.dart';
 import '../widgets/e_ticket_overlay.dart';
 
 class PaymentSuccessPage extends StatelessWidget {
+  final TicketModel ticket;
+  final List<String> seats;
+  final int totalPrice;
+  final int bookingSequence;
+
   PaymentSuccessPage({
     super.key,
     TicketModel? ticket,
     this.seats = const <String>[],
     this.totalPrice = 0,
     this.bookingSequence = 1,
-  }) : ticket =
-           ticket ??
-           TicketModel(
-             id: '',
-             originStation: '-',
-             destinationStation: '-',
-             date: DateTime.now(),
-             train: '-',
-             status: 'available',
-           ),
-       ;
-
-  final TicketModel ticket;
-  final List<String> seats;
-  final int totalPrice;
-  final int bookingSequence;
+  }) : ticket = ticket ??
+            TicketModel(
+              id: '',
+              originStation: '-',
+              destinationStation: '-',
+              date: DateTime.now(),
+              train: '-',
+              status: 'available',
+            );
 
   @override
   Widget build(BuildContext context) {
